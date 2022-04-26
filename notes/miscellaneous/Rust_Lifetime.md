@@ -73,6 +73,52 @@ fn longest<'a>(x: &str, y: &str) -> &'a str {
 }
 ```
 ---
+## Borrow Checker (con'td 4/n)
+* r의 라이프타임은 `'a`로, x의 라이프타임은 `'b`로 표현됐다.
+* `'a` 라이프타임을 가진 r이 `'b` 라이프타임을 가진 오브젝트를 참조하고 있다.
+* `'b` 라이프타임이 `'a` 라이프타임보다 작아서 컴파일러가 이 프로그램을 거부한다.
+* 참조자가 오래 살지 못하기 때문이다.
+```rust
+{
+    let r;         // -------+-- 'a
+                   //        |
+    {              //        |
+        let x = 5; // -+-----+-- 'b
+        r = &x;    //  |     |
+    }              // -+     |
+                   //        |
+    println!("r: {}", r); // |
+                   //        |
+                   // -------+
+}
+```
+---
+* 아래 프로그램은 댕글링 참조자가 없어서 정상적으로 컴파일된다.
+* x의 라이프타임인 'b가 'a보다 커서 r이 x를 참조할 수 있다.
+```rust
+{
+    let x = 5;            // -----+-- 'b
+                          //      |
+    let r = &x;           // --+--+-- 'a
+                          //   |  |
+    println!("r: {}", r); //   |  |
+                          // --+  |
+}                         // -----+
+```
+
+---
+```rust
+fn main() {
+    let string1 = String::from("long string is long");
+    let result;
+    {
+        let string2 = String::from("xyz");
+        result = longest(string1.as_str(), string2.as_str());
+    }
+    println!("The longest string is {}", result);
+}
+```
+---
 ## Omitting Lifetime parameter in function
 * 함수의 경우 라이프타임을 표기하는 파라미터는 생략이 가능해서 생략 규칙에 익숙하지 않으면, 함수가 의미를 이해하기 어려울 수 있다.
 * 어떤 라이프타임을 생략할 수 있는지 확실치 않은 경우는 모든 레퍼런스에 파라미터를 적어주고 [clippy](https://github.com/rust-lang/rust-clippy)를 사용하면 어떤 파라미터가 필요 없는지 친절하게 알려준다. 이에 따라 코드를 다듬으면 된다.
